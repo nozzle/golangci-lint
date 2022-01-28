@@ -838,6 +838,12 @@ func (m Manager) GetAllSupportedLinterConfigs() []*linter.Config {
 			WithSince("v1.26.0").
 			WithPresets(linter.PresetStyle).
 			WithURL("https://github.com/golangci/golangci-lint/blob/master/pkg/golinters/nolintlint/README.md"),
+
+		// nozzle linters:
+		linter.NewConfig(golinters.NewExtractorLint()).
+			WithSince("v1.44.0").
+			WithPresets(linter.PresetStyle, linter.PresetTest).
+			WithURL("https://github.com/nozzle/golangci-lint/pkg/golinters/nozzle/extractorlint"),
 	}
 
 	enabledByDefault := map[string]bool{
