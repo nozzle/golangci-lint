@@ -4,7 +4,7 @@ import (
 	"golang.org/x/tools/go/analysis"
 
 	"github.com/golangci/golangci-lint/pkg/golinters/goanalysis"
-	"github.com/golangci/golangci-lint/pkg/golinters/nozzle/extractorlint/pkg/analyzer"
+	"github.com/nozzle/golangci-lint/pkg/golinters/nozzle/extractorlint/pkg/analyzer"
 )
 
 func NewExtractorLint() *goanalysis.Linter {

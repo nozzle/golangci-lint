@@ -1,4 +1,4 @@
-module github.com/golangci/golangci-lint
+module github.com/nozzle/golangci-lint
 
 go 1.16
 
@@ -31,6 +31,7 @@ require (
 	github.com/golangci/dupl v0.0.0-20180902072040-3e9179ac440a
 	github.com/golangci/go-misc v0.0.0-20180628070357-927a3d87b613
 	github.com/golangci/gofmt v0.0.0-20190930125516-244bba706f1a
+	github.com/golangci/golangci-lint v0.0.0-00010101000000-000000000000
 	github.com/golangci/lint-1 v0.0.0-20191013205115-297bf364a8e0
 	github.com/golangci/maligned v0.0.0-20180506175553-b1d89398deca
 	github.com/golangci/misspell v0.3.5
@@ -65,7 +66,6 @@ require (
 	github.com/nishanths/predeclared v0.2.1
 	github.com/pkg/errors v0.9.1
 	github.com/polyfloyd/go-errorlint v0.0.0-20211125173453-6d6d39c5bb8b
-	github.com/prometheus/procfs v0.6.0 // indirect
 	github.com/quasilyte/go-ruleguard/dsl v0.3.15
 	github.com/ryancurrah/gomodguard v1.2.3
 	github.com/ryanrolds/sqlclosecheck v0.3.0
@@ -101,7 +101,6 @@ require (
 	honnef.co/go/tools v0.2.2
 	mvdan.cc/gofumpt v0.2.1
 	mvdan.cc/interfacer v0.0.0-20180901003855-c20040233aed
-	mvdan.cc/lint v0.0.0-20170908181259-adc824a0674b // indirect
 	mvdan.cc/unparam v0.0.0-20211214103731-d0ef000c54e5
 )
 
