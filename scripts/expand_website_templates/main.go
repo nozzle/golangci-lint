@@ -13,15 +13,19 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"sort"
 	"strings"
 
 	"gopkg.in/yaml.v3"
 
 	"github.com/golangci/golangci-lint/internal/renameio"
+	"github.com/golangci/golangci-lint/pkg/config"
 	"github.com/golangci/golangci-lint/pkg/lint/linter"
 	"github.com/golangci/golangci-lint/pkg/lint/lintersdb"
 )
+
+const listItemPrefix = "list-item-"
 
 var stateFilePath = filepath.Join("docs", "template_data.state")
 
@@ -139,22 +143,22 @@ func getLatestVersion() (string, error) {
 		http.NoBody,
 	)
 	if err != nil {
-		return "", fmt.Errorf("failed to prepare a http request: %s", err)
+		return "", fmt.Errorf("failed to prepare a http request: %w", err)
 	}
 	req.Header.Add("Accept", "application/vnd.github.v3+json")
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("failed to get http response for the latest tag: %s", err)
+		return "", fmt.Errorf("failed to get http response for the latest tag: %w", err)
 	}
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", fmt.Errorf("failed to read a body for the latest tag: %s", err)
+		return "", fmt.Errorf("failed to read a body for the latest tag: %w", err)
 	}
 	release := latestRelease{}
 	err = json.Unmarshal(body, &release)
 	if err != nil {
-		return "", fmt.Errorf("failed to unmarshal the body for the latest tag: %s", err)
+		return "", fmt.Errorf("failed to unmarshal the body for the latest tag: %w", err)
 	}
 	return release.TagName, nil
 }
@@ -162,21 +166,21 @@ func getLatestVersion() (string, error) {
 func buildTemplateContext() (map[string]string, error) {
 	golangciYamlExample, err := os.ReadFile(".golangci.example.yml")
 	if err != nil {
-		return nil, fmt.Errorf("can't read .golangci.example.yml: %s", err)
+		return nil, fmt.Errorf("can't read .golangci.example.yml: %w", err)
 	}
 
 	snippets, err := extractExampleSnippets(golangciYamlExample)
 	if err != nil {
-		return nil, fmt.Errorf("can't read .golangci.example.yml: %s", err)
+		return nil, fmt.Errorf("can't read .golangci.example.yml: %w", err)
 	}
 
 	if err = exec.Command("make", "build").Run(); err != nil {
-		return nil, fmt.Errorf("can't run go install: %s", err)
+		return nil, fmt.Errorf("can't run go install: %w", err)
 	}
 
 	lintersOut, err := exec.Command("./golangci-lint", "help", "linters").Output()
 	if err != nil {
-		return nil, fmt.Errorf("can't run linters cmd: %s", err)
+		return nil, fmt.Errorf("can't run linters cmd: %w", err)
 	}
 
 	lintersOutParts := bytes.Split(lintersOut, []byte("\n\n"))
@@ -186,7 +190,7 @@ func buildTemplateContext() (map[string]string, error) {
 	helpCmd.Env = append(helpCmd.Env, "HELP_RUN=1") // make default concurrency stable: don't depend on machine CPU number
 	help, err := helpCmd.Output()
 	if err != nil {
-		return nil, fmt.Errorf("can't run help cmd: %s", err)
+		return nil, fmt.Errorf("can't run help cmd: %w", err)
 	}
 
 	helpLines := bytes.Split(help, []byte("\n"))
@@ -198,7 +202,7 @@ func buildTemplateContext() (map[string]string, error) {
 
 	latestVersion, err := getLatestVersion()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get latest version: %s", err)
+		return nil, fmt.Errorf("failed to get the latest version: %w", err)
 	}
 
 	return map[string]string{
@@ -251,7 +255,11 @@ func getName(lc *linter.Config) string {
 	name := lc.Name()
 
 	if lc.OriginalURL != "" {
-		name = fmt.Sprintf("[%s](%s)", lc.Name(), lc.OriginalURL)
+		name = fmt.Sprintf("[%s](%s)", name, lc.OriginalURL)
+	}
+
+	if hasSettings(lc.Name()) {
+		name = fmt.Sprintf("%s&nbsp;[%s](#%s)", name, spanWithID(listItemPrefix+lc.Name(), "Configuration", "⚙️"), lc.Name())
 	}
 
 	if !lc.IsDeprecated() {
@@ -263,7 +271,7 @@ func getName(lc *linter.Config) string {
 		title += fmt.Sprintf(" since %s", lc.Deprecation.Since)
 	}
 
-	return name + " " + span(title, "⚠")
+	return name + "&nbsp;" + span(title, "⚠")
 }
 
 func getDesc(lc *linter.Config) string {
@@ -285,8 +293,24 @@ func check(b bool, title string) string {
 	return ""
 }
 
+func hasSettings(name string) bool {
+	tp := reflect.TypeOf(config.LintersSettings{})
+
+	for i := 0; i < tp.NumField(); i++ {
+		if strings.EqualFold(name, tp.Field(i).Name) {
+			return true
+		}
+	}
+
+	return false
+}
+
 func span(title, icon string) string {
 	return fmt.Sprintf(`<span title=%q>%s</span>`, title, icon)
+}
+
+func spanWithID(id, title, icon string) string {
+	return fmt.Sprintf(`<span id=%q title=%q>%s</span>`, id, title, icon)
 }
 
 func getThanksList() string {
@@ -453,6 +477,8 @@ func getLintersSettingSnippets(node, nextNode *yaml.Node) (string, error) {
 		}
 
 		_, _ = fmt.Fprintln(builder, "```")
+		_, _ = fmt.Fprintln(builder)
+		_, _ = fmt.Fprintf(builder, "[%s](#%s)\n\n", span("Back to the top", "🔼"), listItemPrefix+nextNode.Content[i].Value)
 		_, _ = fmt.Fprintln(builder)
 	}
 

@@ -1,6 +1,108 @@
 Follow the news and releases on our [twitter](https://twitter.com/golangci) and our [blog](https://medium.com/golangci).
 There is the most valuable changes log:
 
+### v1.46.0
+
+1. new linters:
+   * `execinquery`: https://github.com/lufeee/execinquery
+   * `nonamedreturns`: https://github.com/firefart/nonamedreturns
+   * `nosprintfhostport`: https://github.com/stbenjam/no-sprintf-host-port
+   * `exhaustruct`: https://github.com/GaijinEntertainment/go-exhaustruc
+2. updated linters:
+   * `bidichk`: from 0.2.2 to 0.2.3
+   * `deadcode`: bump to HEAD
+   * `errchkjson`: from 0.2.3 to 0.3.0
+   * `errname`: from 0.1.5 to 0.1.6
+   * `go-critic`: from 0.6.2 to 0.6.3
+   * `gocyclo`: from 0.4.0 to 0.5.1
+   * `gofumpt` from 0.3.0 to 0.3.1
+   * `gomoddirectives`: from 0.2.2 to 0.2.3
+   * `gosec`: from 2.10.0 to 2.11.0
+   * `honnef.co/go/tools`: from 0.2.2to 0.3.1 (go1.18 support)
+   * `nilnil`: from 0.1.0 to 0.1.1
+   * `nonamedreturns`: bump from 1.0.0 to 1.0.1
+   * `predeclared`: from 0.2.1 to 0.2.2
+   * `promlinter`: bump to v0.2.0
+   * `revive`: from 1.1.4 to 1.2.1
+   * `tenv`: from 1.4.7 to 1.5.0
+   * `thelper`: from 0.5.1 to 0.6.2
+   * `unused`: fix false-positive
+   * `varnamelen`: bump to v0.8.0
+   * `wrapcheck`: from 2.5.0 to 2.6.1
+   * `exhaustivestruct`: This linter is deprecated use `exhaustruct` instead.
+3. documentation:
+   * Update "Shell Completion" instruction on Linux
+   * Update FAQ page
+4. misc:
+   * log: enable override coloring based on `CLICOLOR` and `CLICOLOR_FORCE`
+
+### v1.45.2
+
+1. misc:
+   * fix: help command
+
+### v1.45.1
+
+1. updated linters:
+   * `interfacer`: inactivate with go1.18
+   * `govet`: inactivate unsupported analyzers (go1.18)
+   * `depguard`: reduce requirements
+   * `structcheck`: inactivate with go1.18
+   * `varnamelen`: bump from v0.6.0 to v0.6.1
+2. misc:
+   * Automatic Go version detection 🎉 (go1.18)
+   * docker: update base images (go1.18)
+
+### v1.45.0
+
+1. updated linters:
+   * `cobra`: from 1.3.0 to 1.4.0
+   * `containedctx`: from 1.0.1 to 1.0.2
+   * `errcheck`: add an option to remove default exclusions
+   * `gci`: from 0.3.1 to 0.3.2
+   * `go-header`: from 0.4.2 to 0.4.3
+   * `gofumpt`: add module-path setting
+   * `gofumpt`: from 0.2.1 to 0.3.0
+   * `gopsutil`: from 3.22.1 to 3.22.2
+   * `gosec`: from 2.9.6 to 2.10.0
+   * `makezero`: from 1.1.0 to 1.1.1
+   * `revive`: fix default values
+   * `wrapcheck`: from 2.4.0 to 2.5.0
+2. documentation:
+   * docs: add "back to the top" button
+   * docs: add `forbidigo` example that uses comments
+   * docs: improve linters page
+3. misc:
+   * go1.18 support 🎉
+   * Add an option to manage the targeted version of Go
+   * Default to YAML when config file has no extension
+
+### v1.44.2
+
+1. updated linters:
+   * `gci`: bump to HEAD
+   * `gci`: restore defaults for sections
+   * `whitespace`: from 0.0.4 to 0.0.5
+2. documentation:
+   * add link to configuration in the linters list
+
+### v1.44.1
+
+1. updated linters:
+   * `bidichk`: from 0.2.1 to 0.2.2
+   * `errchkjson`: from 0.2.1 to 0.2.3
+   * `thelper`: from 0.5.0 to 0.5.1
+   * `tagliatelle`: from 0.3.0 to 0.3.1
+   * `gopsutil`: from 3.21.12 to 3.22.1
+   * `gci`: from 0.2.9 to 0.3.0
+   * `revive`: from v1.1.3 to v1.1.4
+   * `varnamelen`: from v0.5.0 to v0.6.0
+2. documentation:
+   * linters: improve configuration pages
+   * `decorder`: fix `disable-init-func-first-check: false` elaboration
+3. misc:
+   * fix debug output
+
 ### v1.44.0
 
 1. new linters:

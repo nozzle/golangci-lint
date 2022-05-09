@@ -1,6 +1,10 @@
 package config
 
-import "github.com/pkg/errors"
+import (
+	"runtime"
+
+	"github.com/pkg/errors"
+)
 
 var defaultLintersSettings = LintersSettings{
 	Decorder: DecorderSettings{
@@ -26,6 +30,10 @@ var defaultLintersSettings = LintersSettings{
 	Forbidigo: ForbidigoSettings{
 		ExcludeGodocExamples: true,
 	},
+	Gci: GciSettings{
+		Sections:         []string{"standard", "default"},
+		SectionSeparator: []string{"newline"},
+	},
 	Gocognit: GocognitSettings{
 		MinComplexity: 30,
 	},
@@ -41,7 +49,11 @@ var defaultLintersSettings = LintersSettings{
 	},
 	Gofumpt: GofumptSettings{
 		LangVersion: "",
+		ModulePath:  "",
 		ExtraRules:  false,
+	},
+	Gosec: GoSecSettings{
+		Concurrency: runtime.NumCPU(),
 	},
 	Ifshort: IfshortSettings{
 		MaxDeclLines: 1,
@@ -111,6 +123,7 @@ type LintersSettings struct {
 	ErrorLint        ErrorLintSettings
 	Exhaustive       ExhaustiveSettings
 	ExhaustiveStruct ExhaustiveStructSettings
+	Exhaustruct      ExhaustructSettings
 	Forbidigo        ForbidigoSettings
 	Funlen           FunlenSettings
 	Gci              GciSettings
@@ -211,10 +224,11 @@ type DuplSettings struct {
 }
 
 type ErrcheckSettings struct {
-	CheckTypeAssertions bool     `mapstructure:"check-type-assertions"`
-	CheckAssignToBlank  bool     `mapstructure:"check-blank"`
-	Ignore              string   `mapstructure:"ignore"`
-	ExcludeFunctions    []string `mapstructure:"exclude-functions"`
+	DisableDefaultExclusions bool     `mapstructure:"disable-default-exclusions"`
+	CheckTypeAssertions      bool     `mapstructure:"check-type-assertions"`
+	CheckAssignToBlank       bool     `mapstructure:"check-blank"`
+	Ignore                   string   `mapstructure:"ignore"`
+	ExcludeFunctions         []string `mapstructure:"exclude-functions"`
 
 	// Deprecated: use ExcludeFunctions instead
 	Exclude string `mapstructure:"exclude"`
@@ -242,6 +256,11 @@ type ExhaustiveStructSettings struct {
 	StructPatterns []string `mapstructure:"struct-patterns"`
 }
 
+type ExhaustructSettings struct {
+	Include []string `mapstructure:"include"`
+	Exclude []string `mapstructure:"exclude"`
+}
+
 type ForbidigoSettings struct {
 	Forbid               []string `mapstructure:"forbid"`
 	ExcludeGodocExamples bool     `mapstructure:"exclude-godoc-examples"`
@@ -253,7 +272,11 @@ type FunlenSettings struct {
 }
 
 type GciSettings struct {
-	LocalPrefixes string `mapstructure:"local-prefixes"`
+	LocalPrefixes    string   `mapstructure:"local-prefixes"` // Deprecated
+	NoInlineComments bool     `mapstructure:"no-inline-comments"`
+	NoPrefixComments bool     `mapstructure:"no-prefix-comments"`
+	Sections         []string `mapstructure:"sections"`
+	SectionSeparator []string `mapstructure:"section-separators"`
 }
 
 type GocognitSettings struct {
@@ -295,6 +318,7 @@ type GoFmtSettings struct {
 
 type GofumptSettings struct {
 	LangVersion string `mapstructure:"lang-version"`
+	ModulePath  string `mapstructure:"module-path"`
 	ExtraRules  bool   `mapstructure:"extra-rules"`
 }
 
@@ -346,16 +370,18 @@ type GoModGuardSettings struct {
 }
 
 type GoSecSettings struct {
-	Includes         []string
-	Excludes         []string
-	Severity         string
-	Confidence       string
+	Includes         []string               `mapstructure:"includes"`
+	Excludes         []string               `mapstructure:"excludes"`
+	Severity         string                 `mapstructure:"severity"`
+	Confidence       string                 `mapstructure:"confidence"`
 	ExcludeGenerated bool                   `mapstructure:"exclude-generated"`
 	Config           map[string]interface{} `mapstructure:"config"`
+	Concurrency      int                    `mapstructure:"concurrency"`
 }
 
 type GovetSettings struct {
-	CheckShadowing bool `mapstructure:"check-shadowing"`
+	Go             string `mapstructure:"-"`
+	CheckShadowing bool   `mapstructure:"check-shadowing"`
 	Settings       map[string]map[string]interface{}
 
 	Enable     []string
@@ -364,7 +390,7 @@ type GovetSettings struct {
 	DisableAll bool `mapstructure:"disable-all"`
 }
 
-func (cfg GovetSettings) Validate() error {
+func (cfg *GovetSettings) Validate() error {
 	if cfg.EnableAll && cfg.DisableAll {
 		return errors.New("enable-all and disable-all can't be combined")
 	}
@@ -472,6 +498,7 @@ type PromlinterSettings struct {
 }
 
 type ReviveSettings struct {
+	MaxOpenFiles          int  `mapstructure:"max-open-files"`
 	IgnoreGeneratedHeader bool `mapstructure:"ignore-generated-header"`
 	Confidence            float64
 	Severity              string
@@ -528,6 +555,11 @@ type ThelperSettings struct {
 		Name  bool `mapstructure:"name"`
 		Begin bool `mapstructure:"begin"`
 	} `mapstructure:"test"`
+	Fuzz struct {
+		First bool `mapstructure:"first"`
+		Name  bool `mapstructure:"name"`
+		Begin bool `mapstructure:"begin"`
+	} `mapstructure:"fuzz"`
 	Benchmark struct {
 		First bool `mapstructure:"first"`
 		Name  bool `mapstructure:"name"`
@@ -558,6 +590,7 @@ type VarnamelenSettings struct {
 	MinNameLength      int      `mapstructure:"min-name-length"`
 	CheckReceiver      bool     `mapstructure:"check-receiver"`
 	CheckReturn        bool     `mapstructure:"check-return"`
+	CheckTypeParam     bool     `mapstructure:"check-type-param"`
 	IgnoreNames        []string `mapstructure:"ignore-names"`
 	IgnoreTypeAssertOk bool     `mapstructure:"ignore-type-assert-ok"`
 	IgnoreMapIndexOk   bool     `mapstructure:"ignore-map-index-ok"`
@@ -571,9 +604,11 @@ type WhitespaceSettings struct {
 }
 
 type WrapcheckSettings struct {
-	IgnoreSigs         []string `mapstructure:"ignoreSigs"`
-	IgnoreSigRegexps   []string `mapstructure:"ignoreSigRegexps"`
-	IgnorePackageGlobs []string `mapstructure:"ignorePackageGlobs"`
+	// TODO(ldez): v2 the options must be renamed to use hyphen.
+	IgnoreSigs             []string `mapstructure:"ignoreSigs"`
+	IgnoreSigRegexps       []string `mapstructure:"ignoreSigRegexps"`
+	IgnorePackageGlobs     []string `mapstructure:"ignorePackageGlobs"`
+	IgnoreInterfaceRegexps []string `mapstructure:"ignoreInterfaceRegexps"`
 }
 
 type WSLSettings struct {

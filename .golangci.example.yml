@@ -64,6 +64,11 @@ run:
   # If false (default) - golangci-lint acquires file lock on start.
   allow-parallel-runners: false
 
+  # Define the Go version limit.
+  # Mainly related to generics support in go1.18.
+  # Default: use Go version from the go.mod file, fallback on the env var `GOVERSION`, fallback on 1.17
+  go: '1.18'
+
 
 # output configuration options
 output:
@@ -136,7 +141,7 @@ linters-settings:
     # Default: true (disabled)
     disable-dec-order-check: false
 
-    # If true, `init` func can be anywhere in file (must not be declared before all other functions).
+    # If true, `init` func can be anywhere in file (does not have to be declared before all other functions).
     # Default: true (disabled)
     disable-init-func-first-check: false
 
@@ -203,6 +208,11 @@ linters-settings:
     # the regex is used to ignore names within pkg. (default "fmt:.*").
     # see https://github.com/kisielk/errcheck#the-deprecated-method for details
     ignore: fmt:.*,io/ioutil:^Read.*
+
+    # To disable the errcheck built-in exclude list.
+    # See `-excludeonly` option in https://github.com/kisielk/errcheck#excluding-functions for details.
+    # Default: false
+    disable-default-exclusions: true
 
     # DEPRECATED use exclude-functions instead.
     #
@@ -275,11 +285,24 @@ linters-settings:
       - '*.Test'
       - 'example.com/package.ExampleStruct'
 
+  exhaustruct:
+    # List of regular expressions to match struct packages and names.
+    # If this list is empty, all structs are tested.
+    include:
+      - '.*\.Test'
+      - 'example\.com/package\.ExampleStruct[\d]{1,2}'
+    # List of regular expressions to exclude struct packages and names from check.
+    exclude:
+      - 'cobra\.Command$'
+
   forbidigo:
     # Forbid the following identifiers (list of regexp).
     forbid:
       - ^print.*$
       - 'fmt\.Print.*'
+      # Optionally put comments at the end of the regex, surrounded by `(# )?`
+      # Escape any special characters.
+      - 'fmt\.Print.*(# Do not commit print statements\.)?'
     # Exclude godoc examples from forbidigo checks.
     # Default: true
     exclude_godoc_examples: false
@@ -295,10 +318,31 @@ linters-settings:
     statements: -1
 
   gci:
-    # Put imports beginning with prefix after 3rd-party packages.
-    # Only support one prefix.
-    # If not set, use `goimports.local-prefixes`.
+    # DEPRECATED: use `sections` and `prefix(github.com/org/project)` instead.
     local-prefixes: github.com/org/project
+
+    # Checks that no inline Comments are present.
+    # Default: false
+    no-inline-comments: true
+
+    # Checks that no prefix Comments(comment lines above an import) are present.
+    # Default: false
+    no-prefix-comments: true
+
+    # Section configuration to compare against.
+    # Section names are case-insensitive and may contain parameters in ().
+    # Default: ["standard", "default"]
+    sections:
+      - standard                       # Captures all standard packages if they do not match another section.
+      - default                        # Contains all imports that could not be matched to another section type.
+      - comment(your text here)        # Prints the specified indented comment.
+      - newLine                        # Prints an empty line
+      - prefix(github.com/org/project) # Groups all imports with the specified Prefix.
+
+    # Separators that should be present between sections.
+    # Default: ["newLine"]
+    section-separators:
+      - newLine
 
   gocognit:
     # Minimal code complexity to report
@@ -482,6 +526,10 @@ linters-settings:
     # Default: 1.15
     lang-version: "1.17"
 
+    # Module path which contains the source code being formatted.
+    # Default: empty string
+    module-path: github.com/org/project
+
     # Choose whether to use the extra rules.
     # Default: false
     extra-rules: true
@@ -621,6 +669,7 @@ linters-settings:
       - G108
       - G109
       - G110
+      - G111
       - G201
       - G202
       - G203
@@ -655,6 +704,7 @@ linters-settings:
       - G108
       - G109
       - G110
+      - G111
       - G201
       - G202
       - G203
@@ -690,6 +740,10 @@ linters-settings:
     # Valid options are: low, medium, high.
     # Default: low
     confidence: medium
+
+    # Concurrency value.
+    # Default: the number of logical CPUs usable by the current process.
+    concurrency: 12
 
     # To specify the configuration of rules.
     # The configuration of rules is not fully documented by gosec:
@@ -746,6 +800,7 @@ linters-settings:
       - lostcancel
       - nilfunc
       - nilness
+      - nonamedreturns
       - printf
       - reflectvaluecompare
       - shadow
@@ -789,6 +844,7 @@ linters-settings:
       - lostcancel
       - nilfunc
       - nilness
+      - nonamedreturns
       - printf
       - reflectvaluecompare
       - shadow
@@ -1003,13 +1059,30 @@ linters-settings:
      - UnitAbbreviations
 
   revive:
+    # Maximum number of open files at the same time.
+    # See https://github.com/mgechev/revive#command-line-flags
+    # Defaults to unlimited.
+    max-open-files: 2048
+
+    # When set to false, ignores files with "GENERATED" header, similar to golint.
     # See https://github.com/mgechev/revive#available-rules for details.
+    # Default: false
     ignore-generated-header: true
-    severity: warning
-    enable-all-rules: false
-    # confidence: 0.8
-    # error-code: 0
-    # warning-code: 0
+
+    # Sets the default severity.
+    # See https://github.com/mgechev/revive#configuration
+    # Default: warning
+    severity: error
+
+    # Enable all available rules.
+    # Default: false
+    enable-all-rules: true
+
+    # Sets the default failure confidence.
+    # This means that linting errors with less than 0.8 confidence will be ignored.
+    # Default: 0.8
+    confidence: 0.1
+
     rules:
       # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#add-constant
       - name: add-constant
@@ -1020,6 +1093,11 @@ linters-settings:
             allowStrs: '""'
             allowInts: "0,1,2"
             allowFloats: "0.0,0.,1.0,1.,2.0,2."
+      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#atomic
+      - name: argument-limit
+        severity: warning
+        disabled: false
+        arguments: [4]
       # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#atomic
       - name: atomic
         severity: warning
@@ -1409,12 +1487,15 @@ linters-settings:
     # Variable names that are at least this long will be ignored.
     # Default: 3
     min-name-length: 2
-    # Check method receiver names.
+    # Check method receivers.
     # Default: false
     check-receiver: true
     # Check named return values.
     # Default: false
     check-return: true
+    # Check type parameters.
+    # Default: false
+    check-type-param: true
     # Ignore "ok" variables that hold the bool return value of a type assertion.
     # Default: false
     ignore-type-assert-ok: true
@@ -1429,8 +1510,11 @@ linters-settings:
     ignore-names:
       - err
     # Optional list of variable declarations that should be ignored completely.
-    # Entries must be in the form of "<variable name> <type>" or "<variable name> *<type>"
-    # for variables, or "const <name>" for constants.
+    # Entries must be in one of the following forms (see below for examples):
+    # - for variables, parameters, named return values, method receivers, or type parameters:
+    #   <name> <type>  (<type> can also be a pointer/slice/map/chan/...)
+    # - for constants: const <name>
+    #
     # Default: []
     ignore-decls:
       - c echo.Context
@@ -1439,6 +1523,8 @@ linters-settings:
       - e error
       - i int
       - const C
+      - T any
+      - m map[string]int
 
   whitespace:
     # Enforces newlines (or comments) after every multi-line if statement.
@@ -1466,6 +1552,8 @@ linters-settings:
     ignorePackageGlobs:
       - encoding/*
       - github.com/pkg/*
+    ignoreInterfaceRegexps:
+      - ^(?i)c(?-i)ach(ing|e)
 
   wsl:
     # See https://github.com/bombsimon/wsl/blob/master/doc/configuration.md for documentation of available settings.
@@ -1539,6 +1627,7 @@ linters-settings:
 
 linters:
   # Disable all linters.
+  # Default: false
   disable-all: true
   # Enable specific linter
   # https://golangci-lint.run/usage/linters/#enabled-by-default-linters
@@ -1600,6 +1689,7 @@ linters:
     - nlreturn
     - noctx
     - nolintlint
+    - nosprintfhostport
     - paralleltest
     - prealloc
     - predeclared
@@ -1628,6 +1718,7 @@ linters:
     - wsl
 
   # Enable all available linters.
+  # Default: false
   enable-all: true
   # Disable specific linter
   # https://golangci-lint.run/usage/linters/#disabled-by-default-linters--e--enable
@@ -1689,6 +1780,7 @@ linters:
     - nlreturn
     - noctx
     - nolintlint
+    - nosprintfhostport
     - paralleltest
     - prealloc
     - predeclared
