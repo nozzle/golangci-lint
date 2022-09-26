@@ -186,4 +186,9 @@ require (
 	mvdan.cc/lint v0.0.0-20170908181259-adc824a0674b // indirect
 )
 
+require (
+	github.com/denis-tingajkin/go-header v0.4.2 // indirect
+	github.com/mgechev/dots v0.0.0-20210922191527-e955255bf517 // indirect
+)
+
 replace github.com/golangci/golangci-lint => github.com/nozzle/golangci-lint v1.44.0
