@@ -1,4 +1,4 @@
-module github.com/golangci/golangci-lint
+module github.com/nozzle/golangci-lint
 
 go 1.19
 
@@ -186,3 +186,7 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	mvdan.cc/lint v0.0.0-20170908181259-adc824a0674b // indirect
 )
+
+require github.com/golangci/golangci-lint v1.49.0
+
+replace github.com/golangci/golangci-lint => ./
